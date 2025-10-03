@@ -37,6 +37,8 @@ public class ServicePerpustakaanTest {
     @BeforeEach
     void setUp() {
         servicePerpustakaan = new ServicePerpustakaan(mockRepositoriBuku, mockKalkulatorDenda);
+
+        // PERBAIKAN: Selalu buat objek baru di setiap test untuk menghindari state bocor (leak)
         bukuTest = new Buku("1234567890", "Pemrograman Java", "John Doe", 5, 150000.0);
         anggotaTest = new Anggota("A001", "John Student", "john@student.ac.id",
                 "081234567890", Anggota.TipeAnggota.MAHASISWA);
