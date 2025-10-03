@@ -18,7 +18,7 @@ public class ServicePerpustakaan {
     }
 
     public boolean tambahBuku(Buku buku) {
-        if (buku == null || !ValidationUtils.isValidBuku(buku)) {
+        if (!ValidationUtils.isValidBuku(buku)) {
             return false;
         }
 
@@ -74,42 +74,26 @@ public class ServicePerpustakaan {
         return buku.map(Buku::getJumlahTersedia).orElse(0);
     }
 
-    /**
-     * Proses peminjaman buku.
-     * Urutan penting:
-     *  1. validasi anggota
-     *  2. cek apakah anggota boleh pinjam lagi
-     *  3. cek ketersediaan buku (tanpa melakukan side-effect)
-     *  4. jika lolos, lakukan updateJumlahTersedia (side-effect) dan ubah state anggota
-     */
     public boolean pinjamBuku(String isbn, Anggota anggota) {
-        // Validasi input dasar
-        if (isbn == null || isbn.isBlank() || anggota == null) {
-            return false;
-        }
-
         // Validasi anggota
         if (!ValidationUtils.isValidAnggota(anggota) || !anggota.isAktif()) {
             return false;
         }
 
-        // Cek apakah anggota masih bisa pinjam (harus dilakukan sebelum side-effect)
+        // Cek apakah anggota masih bisa pinjam
         if (!anggota.bolehPinjamLagi()) {
             return false;
         }
 
-        // Cek ketersediaan buku (ambil data, tapi jangan ubah apapun dulu)
+        // Cek ketersediaan buku
         Optional<Buku> bukuOpt = repositoriBuku.cariByIsbn(isbn);
-        if (bukuOpt.isEmpty()) {
+        if (bukuOpt.isEmpty() || !bukuOpt.get().isTersedia()) {
             return false;
         }
 
         Buku buku = bukuOpt.get();
-        if (!buku.isTersedia() || buku.getJumlahTersedia() <= 0) {
-            return false;
-        }
 
-        // Sekarang aman melakukan side-effect (update jumlah tersedia)
+        // Update jumlah tersedia
         boolean updateBerhasil = repositoriBuku.updateJumlahTersedia(isbn, buku.getJumlahTersedia() - 1);
 
         if (updateBerhasil) {
