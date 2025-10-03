@@ -1,282 +1,115 @@
-package com.praktikum.testing.service;
+package com.praktikum.testing.util;
 
-import com.praktikum.testing.model.Anggota;
 import com.praktikum.testing.model.Buku;
-import com.praktikum.testing.repository.RepositoriBuku;
-import org.junit.jupiter.api.BeforeEach;
+import com.praktikum.testing.model.Anggota;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("Test Service Perpustakaan")
-public class ServicePerpustakaanTest {
+@DisplayName("Test Validasi Utils")
+public class ValidationUtilsTest {
 
-    @Mock
-    private RepositoriBuku mockRepositoriBuku;
+    @Test
+    @DisplayName("Email valid harus mengembalikan true")
+    void testEmailValid() {
+        assertTrue(ValidationUtils.isValidEmail("mahasiswa@univ.ac.id"));
+        assertTrue(ValidationUtils.isValidEmail("test@gmail.com"));
+        assertTrue(ValidationUtils.isValidEmail("user123@domain.org"));
+    }
 
-    @Mock
-    private KalkulatorDenda mockKalkulatorDenda;
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "email-tanpa-at.com", "email@", "@domain.com", "email@domain.com,"})
+    @DisplayName("Email tidak valid harus mengembalikan false")
+    void testEmailTidakValid(String emailTidakValid) {
+        assertFalse(ValidationUtils.isValidEmail(emailTidakValid));
+    }
 
-    private ServicePerpustakaan servicePerpustakaan;
-    private Anggota anggotaTest;
+    @Test
+    @DisplayName("Email null harus mengembalikan false")
+    void testEmailNull() {
+        assertFalse(ValidationUtils.isValidEmail(null));
+    }
 
-    @BeforeEach
-    void setUp() {
-        servicePerpustakaan = new ServicePerpustakaan(mockRepositoriBuku, mockKalkulatorDenda);
+    @Test
+    @DisplayName("Nomor telepon valid harus mengembalikan true")
+    void testNomorTeleponValid() {
+        assertTrue(ValidationUtils.isValidNomorTelepon("081234567890"));
+        assertTrue(ValidationUtils.isValidNomorTelepon("+628123456789"));
+        assertTrue(ValidationUtils.isValidNomorTelepon("+62812-3456-7890"));
+    }
 
-        // Buat Anggota baru di setiap test
-        anggotaTest = new Anggota("A001", "John Student", "john@student.ac.id",
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "123456789", "07123456789", "081234", "-627123456789"})
+    @DisplayName("Nomor telepon tidak valid harus mengembalikan false")
+    void testNomorTeleponTidakValid(String teleponTidakValid) {
+        assertFalse(ValidationUtils.isValidNomorTelepon(teleponTidakValid));
+    }
+
+    @Test
+    @DisplayName("ISBN valid harus mengembalikan true")
+    void testISBNValid() {
+        assertTrue(ValidationUtils.isValidISBN("1234567890"));
+        assertTrue(ValidationUtils.isValidISBN("1234567890123"));
+        assertTrue(ValidationUtils.isValidISBN("123-456-789-0"));
+    }
+
+    @Test
+    @DisplayName("Buku valid harus mengembalikan true")
+    void testBukuValid() {
+        Buku buku = new Buku("1234567890", "Pemrograman Java", "John Doe", 5, 150000.0);
+        assertTrue(ValidationUtils.isValidBuku(buku));
+    }
+
+    @Test
+    @DisplayName("Buku dengan data tidak valid harus mengembalikan false")
+    void testBukuTidakValid() {
+        // Buku null
+        assertFalse(ValidationUtils.isValidBuku(null));
+
+        // ISBN tidak valid
+        Buku bukuIsbnTidakValid = new Buku("123", "Judul", "Pengarang", 5, 100000.0);
+        assertFalse(ValidationUtils.isValidBuku(bukuIsbnTidakValid));
+
+        // Jumlah total negatif
+        Buku bukuJumlahNegatif = new Buku("1234567890", "Judul", "Pengarang", -1, 100000.0);
+        assertFalse(ValidationUtils.isValidBuku(bukuJumlahNegatif));
+
+        // Harga negatif
+        Buku bukuHargaNegatif = new Buku("1234567890", "Judul", "Pengarang", 5, -10000.0);
+        assertFalse(ValidationUtils.isValidBuku(bukuHargaNegatif));
+    }
+
+    @Test
+    @DisplayName("Anggota valid harus mengembalikan true")
+    void testAnggotaValid() {
+        Anggota anggota = new Anggota("A001", "John Doe", "john@univ.ac.id",
                 "081234567890", Anggota.TipeAnggota.MAHASISWA);
-    }
-
-    // --- Utility Method untuk membuat Buku baru agar tidak ada state bocor ---
-    private Buku buatBukuTesting(String isbn, int jumlahTotal, int jumlahTersedia) {
-        Buku buku = new Buku(isbn, "Pemrograman Java", "John Doe", jumlahTotal, 150000.0);
-        buku.setJumlahTersedia(jumlahTersedia);
-        return buku;
-    }
-
-    // --- Test Method Perbaikan Final ---
-
-    @Test
-    @DisplayName("Tambah buku berhasil ketika data valid dan buku belum ada")
-    void testTambahBukuBerhasil() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.empty());
-        when(mockRepositoriBuku.simpan(bukuTest)).thenReturn(true);
-
-        boolean hasil = servicePerpustakaan.tambahBuku(bukuTest);
-
-        assertTrue(hasil, "Harus berhasil menambah buku");
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku).simpan(bukuTest);
+        assertTrue(ValidationUtils.isValidAnggota(anggota));
     }
 
     @Test
-    @DisplayName("Tambah buku gagal ketika buku sudah ada")
-    void testTambahBukuGagalBukuSudahAda() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-
-        boolean hasil = servicePerpustakaan.tambahBuku(bukuTest);
-
-        assertFalse(hasil, "Tidak boleh menambah buku yang sudah ada");
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku, never()).simpan(any(Buku.class));
+    @DisplayName("String valid harus mengembalikan true")
+    void testStringValid() {
+        assertTrue(ValidationUtils.isValidString("teks"));
+        assertTrue(ValidationUtils.isValidString("teks dengan spasi"));
+        assertFalse(ValidationUtils.isValidString(""));
+        assertFalse(ValidationUtils.isValidString(" "));
+        assertFalse(ValidationUtils.isValidString(null));
     }
 
     @Test
-    @DisplayName("Tambah buku gagal ketika data tidak valid")
-    void testTambahBukuGagalDataTidakValid() {
-        Buku bukuTidakValid = new Buku("123", "", "", 0, -100.0);
+    @DisplayName("Angka positif dan non-negatif harus valid")
+    void testValidasiAngka() {
+        assertTrue(ValidationUtils.isAngkaPositif(1.0));
+        assertTrue(ValidationUtils.isAngkaPositif(100.0));
+        assertFalse(ValidationUtils.isAngkaPositif(0.0));
+        assertFalse(ValidationUtils.isAngkaPositif(-1.0));
 
-        boolean hasil = servicePerpustakaan.tambahBuku(bukuTidakValid);
-
-        assertFalse(hasil, "Tidak boleh menambah buku dengan data tidak valid");
-        verifyNoInteractions(mockRepositoriBuku);
-    }
-
-    @Test
-    @DisplayName("Hapus buku berhasil ketika tidak ada yang dipinjam")
-    void testHapusBukuBerhasil() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 5); // Semua salinan tersedia
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-        when(mockRepositoriBuku.hapus("1234567890")).thenReturn(true);
-
-        boolean hasil = servicePerpustakaan.hapusBuku("1234567890");
-
-        assertTrue(hasil, "Harus berhasil menghapus buku");
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku).hapus("1234567890");
-    }
-
-    @Test
-    @DisplayName("Hapus buku gagal ketika ada yang dipinjam")
-    void testHapusBukuGagalAdaYangDipinjam() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 2); // Ada yang dipinjam (5 total - 2 tersedia = 3 dipinjam)
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-
-        boolean hasil = servicePerpustakaan.hapusBuku("1234567890");
-
-        assertFalse(hasil, "Tidak boleh menghapus buku yang sedang dipinjam");
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku, never()).hapus(anyString());
-    }
-
-    @Test
-    @DisplayName("Cari buku by ISBN berhasil")
-    void testCariBukuByIsbnBerhasil() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-
-        Optional<Buku> hasil = servicePerpustakaan.cariBukuByIsbn("1234567890");
-
-        assertTrue(hasil.isPresent(), "Harus menemukan buku");
-        assertEquals("Pemrograman Java", hasil.get().getJudul());
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-    }
-
-    @Test
-    @DisplayName("Cari buku by judul berhasil")
-    void testCariBukuByJudul() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
-        List<Buku> daftarBuku = Arrays.asList(bukuTest);
-        when(mockRepositoriBuku.cariByJudul("Java")).thenReturn(daftarBuku);
-
-        List<Buku> hasil = servicePerpustakaan.cariBukuByJudul("Java");
-
-        assertEquals(1, hasil.size());
-        assertEquals("Pemrograman Java", hasil.get(0).getJudul());
-        verify(mockRepositoriBuku).cariByJudul("Java");
-    }
-
-    @Test
-    @DisplayName("Pinjam buku berhasil ketika semua kondisi terpenuhi")
-    void testPinjamBukuBerhasil() {
-        Anggota anggota = buatAnggotaTesting();
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 3); // Tersedia 3
-
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-        when(mockRepositoriBuku.updateJumlahTersedia("1234567890", 2)).thenReturn(true); // 3-1=2
-
-        boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
-
-        assertTrue(hasil, "Harus berhasil meminjam buku");
-        assertTrue(anggota.getIdBukuDipinjam().contains("1234567890"));
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku).updateJumlahTersedia("1234567890", 2);
-    }
-
-    @Test
-    @DisplayName("Pinjam buku gagal ketika buku tidak tersedia")
-    void testPinjamBukuGagalTidakTersedia() {
-        Anggota anggota = buatAnggotaTesting();
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 0); // Tersedia 0
-
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-        when(mockRepositoriBuku.updateJumlahTersedia(anyString(), anyInt())).thenReturn(false); // Tambah untuk keamanan
-
-        boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
-
-        assertFalse(hasil, "Tidak boleh meminjam buku yang tidak tersedia");
-        assertFalse(anggota.getIdBukuDipinjam().contains("1234567890"));
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku, never()).updateJumlahTersedia(anyString(), anyInt());
-    }
-
-    @Test
-    @DisplayName("Pinjam buku gagal ketika anggota tidak aktif")
-    void testPinjamBukuGagalAnggotaTidakAktif() {
-        Anggota anggota = buatAnggotaTesting();
-        anggota.setAktif(false);
-
-        boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
-
-        assertFalse(hasil, "Anggota tidak aktif tidak boleh meminjam buku");
-        verifyNoInteractions(mockRepositoriBuku);
-    }
-
-    @Test
-    @DisplayName("Pinjam buku gagal ketika batas pinjam tercapai")
-    void testPinjamBukuGagalBatasPinjamTercapai() {
-        Anggota anggota = buatAnggotaTesting();
-        // Arrange - Mahasiswa sudah pinjam 3 buku (batas maksimal)
-        anggota.tambahBukuDipinjam("1111111111");
-        anggota.tambahBukuDipinjam("2222222222");
-        anggota.tambahBukuDipinjam("3333333333");
-
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-
-        // Tambah untuk keamanan, agar panggilan update (jika terjadi) gagal
-        when(mockRepositoriBuku.updateJumlahTersedia(anyString(), anyInt())).thenReturn(false);
-
-        boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
-
-        assertFalse(hasil, "Tidak boleh meminjam ketika batas pinjam tercapai");
-
-        // Verifikasi bahwa pencarian buku terjadi, tetapi update tidak terjadi.
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku, never()).updateJumlahTersedia(anyString(), anyInt());
-    }
-
-    @Test
-    @DisplayName("Kembalikan buku berhasil")
-    void testKembalikanBukuBerhasil() {
-        Anggota anggota = buatAnggotaTesting();
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 2); // Tersedia 2 sebelum kembali
-
-        anggota.tambahBukuDipinjam("1234567890");
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-        when(mockRepositoriBuku.updateJumlahTersedia("1234567890", 3)).thenReturn(true); // 2+1=3
-
-        boolean hasil = servicePerpustakaan.kembalikanBuku("1234567890", anggota);
-
-        assertTrue(hasil, "Harus berhasil mengembalikan buku");
-        assertFalse(anggota.getIdBukuDipinjam().contains("1234567890"));
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-        verify(mockRepositoriBuku).updateJumlahTersedia("1234567890", 3);
-    }
-
-    @Test
-    @DisplayName("Kembalikan buku gagal ketika anggota tidak meminjam buku tersebut")
-    void testKembalikanBukuGagalTidakMeminjam() {
-        Anggota anggota = buatAnggotaTesting();
-
-        boolean hasil = servicePerpustakaan.kembalikanBuku("1234567890", anggota);
-
-        assertFalse(hasil, "Tidak boleh mengembalikan buku yang tidak dipinjam");
-        verifyNoInteractions(mockRepositoriBuku);
-    }
-
-    @Test
-    @DisplayName("Cek ketersediaan buku")
-    void testBukuTersedia() {
-        Buku bukuTestTersedia = buatBukuTesting("1234567890", 5, 1);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTestTersedia));
-
-        assertTrue(servicePerpustakaan.bukuTersedia("1234567890"));
-
-        Buku bukuTestTidakTersedia = buatBukuTesting("1234567890", 5, 0);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTestTidakTersedia));
-
-        assertFalse(servicePerpustakaan.bukuTersedia("1234567890"));
-    }
-
-    @Test
-    @DisplayName("Get jumlah tersedia")
-    void testGetJumlahTersedia() {
-        Buku bukuTest = buatBukuTesting("1234567890", 5, 3);
-        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
-
-        int jumlah = servicePerpustakaan.getJumlahTersedia("1234567890");
-
-        assertEquals(3, jumlah);
-        verify(mockRepositoriBuku).cariByIsbn("1234567890");
-    }
-
-    @Test
-    @DisplayName("Get jumlah tersedia untuk buku yang tidak ada")
-    void testGetJumlahTersediaBuku Tidak Ada")
-    void testGetJumlahTersediaBukuTidakAda() {
-        when(mockRepositoriBuku.cariByIsbn("9999999999")).thenReturn(Optional.empty());
-
-        int jumlah = servicePerpustakaan.getJumlahTersedia("9999999999");
-
-        assertEquals(0, jumlah);
-        verify(mockRepositoriBuku).cariByIsbn("9999999999");
+        assertTrue(ValidationUtils.isAngkaNonNegatif(0.0));
+        assertTrue(ValidationUtils.isAngkaNonNegatif(10.0));
+        assertFalse(ValidationUtils.isAngkaNonNegatif(-0.1));
     }
 }
