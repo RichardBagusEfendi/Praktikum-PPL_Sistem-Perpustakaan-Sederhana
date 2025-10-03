@@ -31,12 +31,16 @@ public class ServicePerpustakaanTest {
     private KalkulatorDenda mockKalkulatorDenda;
 
     private ServicePerpustakaan servicePerpustakaan;
-    // PENTING: Kita tidak lagi menggunakan field bukuTest dan anggotaTest untuk operasi pinjam/kembalikan
-    // karena rentan state bocor, tetapi kita akan buat objek baru di dalam method test.
+    // PENTING: Field bukuTest dihapus karena rentan state bocor
+    private Anggota anggotaTest;
 
     @BeforeEach
     void setUp() {
         servicePerpustakaan = new ServicePerpustakaan(mockRepositoriBuku, mockKalkulatorDenda);
+
+        // Buat Anggota baru di setiap test
+        anggotaTest = new Anggota("A001", "John Student", "john@student.ac.id",
+                "081234567890", Anggota.TipeAnggota.MAHASISWA);
     }
 
     // --- Utility Method untuk membuat Buku baru agar tidak ada state bocor ---
@@ -46,12 +50,7 @@ public class ServicePerpustakaanTest {
         return buku;
     }
 
-    private Anggota buatAnggotaTesting() {
-        return new Anggota("A001", "John Student", "john@student.ac.id",
-                "081234567890", Anggota.TipeAnggota.MAHASISWA);
-    }
-
-    // --- Test Method Perbaikan Final ---
+    // --- Method yang TIDAK diubah, menggunakan buku baru di dalamnya ---
 
     @Test
     @DisplayName("Tambah buku berhasil ketika data valid dan buku belum ada")
