@@ -208,12 +208,18 @@ public class ServicePerpustakaanTest {
         anggotaTest.tambahBukuDipinjam("2222222222");
         anggotaTest.tambahBukuDipinjam("3333333333");
 
+        // PERBAIKAN ARRANGE: Tambahkan mocking karena ServicePerpustakaan memanggil cariByIsbn
+        when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
+
         // Act
         boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggotaTest);
 
         // Assert
         assertFalse(hasil, "Tidak boleh meminjam ketika batas pinjam tercapai");
-        verifyNoInteractions(mockRepositoriBuku);
+
+        // PERBAIKAN ASSERT: Verifikasi bahwa pencarian buku terjadi, tetapi update tidak terjadi.
+        verify(mockRepositoriBuku).cariByIsbn("1234567890");
+        verify(mockRepositoriBuku, never()).updateJumlahTersedia(anyString(), anyInt());
     }
 
     @Test
