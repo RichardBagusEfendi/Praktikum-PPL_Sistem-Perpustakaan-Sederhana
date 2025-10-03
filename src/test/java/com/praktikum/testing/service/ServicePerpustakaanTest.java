@@ -31,7 +31,6 @@ public class ServicePerpustakaanTest {
     private KalkulatorDenda mockKalkulatorDenda;
 
     private ServicePerpustakaan servicePerpustakaan;
-    // PENTING: Field bukuTest dihapus karena rentan state bocor
     private Anggota anggotaTest;
 
     @BeforeEach
@@ -50,7 +49,7 @@ public class ServicePerpustakaanTest {
         return buku;
     }
 
-    // --- Method yang TIDAK diubah, menggunakan buku baru di dalamnya ---
+    // --- Test Method Perbaikan Final ---
 
     @Test
     @DisplayName("Tambah buku berhasil ketika data valid dan buku belum ada")
@@ -168,6 +167,7 @@ public class ServicePerpustakaanTest {
         Buku bukuTest = buatBukuTesting("1234567890", 5, 0); // Tersedia 0
 
         when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
+        when(mockRepositoriBuku.updateJumlahTersedia(anyString(), anyInt())).thenReturn(false); // Tambah untuk keamanan
 
         boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
 
@@ -200,6 +200,9 @@ public class ServicePerpustakaanTest {
 
         Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
         when(mockRepositoriBuku.cariByIsbn("1234567890")).thenReturn(Optional.of(bukuTest));
+
+        // Tambah untuk keamanan, agar panggilan update (jika terjadi) gagal
+        when(mockRepositoriBuku.updateJumlahTersedia(anyString(), anyInt())).thenReturn(false);
 
         boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
 
@@ -267,6 +270,7 @@ public class ServicePerpustakaanTest {
 
     @Test
     @DisplayName("Get jumlah tersedia untuk buku yang tidak ada")
+    void testGetJumlahTersediaBuku Tidak Ada")
     void testGetJumlahTersediaBukuTidakAda() {
         when(mockRepositoriBuku.cariByIsbn("9999999999")).thenReturn(Optional.empty());
 
