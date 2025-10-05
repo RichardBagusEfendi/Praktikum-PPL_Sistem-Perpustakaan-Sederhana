@@ -3,7 +3,6 @@ package com.praktikum.testing.model;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,10 +26,9 @@ class AnggotaTest {
         assertEquals("081", anggota.getTelepon());
         assertEquals(Anggota.TipeAnggota.DOSEN, anggota.getTipeAnggota());
         assertTrue(anggota.isAktif());
-        assertTrue(anggota.getIdBukuDipinjam().isEmpty());
         assertEquals(0, anggota.getJumlahBukuDipinjam());
 
-        // Test Constructor Kosong dan Setters
+        // Test Constructor Kosong dan Setters (Menutup method yang hilang)
         Anggota anggotaKosong = new Anggota();
         assertNotNull(anggotaKosong.getIdBukuDipinjam());
         assertTrue(anggotaKosong.isAktif());
@@ -41,13 +39,23 @@ class AnggotaTest {
         anggotaKosong.setIdAnggota("A002");
         assertEquals("A002", anggotaKosong.getIdAnggota());
 
+        anggotaKosong.setNama("Nama Baru");
+        assertEquals("Nama Baru", anggotaKosong.getNama());
+
+        anggotaKosong.setTelepon("082");
+        assertEquals("082", anggotaKosong.getTelepon());
+
         anggotaKosong.setTipeAnggota(Anggota.TipeAnggota.MAHASISWA);
         assertEquals(Anggota.TipeAnggota.MAHASISWA, anggotaKosong.getTipeAnggota());
+
+        anggotaKosong.setEmail("baru@mail.com");
+        assertEquals("baru@mail.com", anggotaKosong.getEmail());
 
         // Test Setters List
         List<String> pinjamanBaru = Arrays.asList(ISBN_1);
         anggotaKosong.setIdBukuDipinjam(pinjamanBaru);
         assertEquals(1, anggotaKosong.getJumlahBukuDipinjam());
+
         // Verifikasi bahwa getIdBukuDipinjam mengembalikan salinan
         List<String> listPinjaman = anggotaKosong.getIdBukuDipinjam();
         assertNotSame(listPinjaman, anggotaKosong.getIdBukuDipinjam(), "Harus mengembalikan salinan list");
@@ -99,7 +107,7 @@ class AnggotaTest {
     @Test
     @DisplayName("Test tambah dan hapus buku (Branch Coverage)")
     void testTambahDanHapusBuku() {
-        Anggota anggota = buatAnggotaTesting();
+        Anggota anggota = new Anggota();
 
         // 1. Tambah buku pertama (memenuhi if)
         anggota.tambahBukuDipinjam(ISBN_1);
@@ -111,6 +119,10 @@ class AnggotaTest {
 
         // Hapus buku pertama
         anggota.hapusBukuDipinjam(ISBN_1);
+        assertEquals(0, anggota.getJumlahBukuDipinjam());
+
+        // Hapus buku yang tidak ada
+        anggota.hapusBukuDipinjam("9999999999");
         assertEquals(0, anggota.getJumlahBukuDipinjam());
     }
 
@@ -130,12 +142,6 @@ class AnggotaTest {
 
         // Test toString
         anggota1.tambahBukuDipinjam(ISBN_1);
-        String expected = "Anggota{idAnggota='A001', nama='John', email='E', telepon='T', tipeAnggota=UMUM, jumlahBukuDipinjam=1, aktif=true}";
-        assertTrue(anggota1.toString().contains("idAnggota='A001'")); // Cek partial
-    }
-
-    private Anggota buatAnggotaTesting() {
-        return new Anggota("A001", "John Student", "john@student.ac.id",
-                "081234567890", Anggota.TipeAnggota.MAHASISWA);
+        assertTrue(anggota1.toString().contains("idAnggota='A001'"));
     }
 }

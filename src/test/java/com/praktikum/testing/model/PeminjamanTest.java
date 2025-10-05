@@ -28,13 +28,26 @@ class PeminjamanTest {
         assertEquals(JATUH_TEMPO_BESOK, pinjam.getTanggalJatuhTempo());
         assertFalse(pinjam.isSudahDikembalikan());
 
-        // Test Constructor Kosong dan Setters
+        // Test Constructor Kosong dan Setters (Menutup method yang hilang)
         Peminjaman pinjamKosong = new Peminjaman();
-        pinjamKosong.setTanggalJatuhTempo(JATUH_TEMPO_KEMARIN); // Uji semua setters
-        assertEquals(JATUH_TEMPO_KEMARIN, pinjamKosong.getTanggalJatuhTempo());
 
+        pinjamKosong.setIdPeminjaman("P002");
+        assertEquals("P002", pinjamKosong.getIdPeminjaman());
+
+        pinjamKosong.setIdAnggota("A002");
+        assertEquals("A002", pinjamKosong.getIdAnggota());
+
+        pinjamKosong.setIsbnBuku("456");
+        assertEquals("456", pinjamKosong.getIsbnBuku());
+
+        pinjamKosong.setTanggalPinjam(HARI_INI.minusDays(10));
+        assertEquals(HARI_INI.minusDays(10), pinjamKosong.getTanggalPinjam());
+
+        pinjamKosong.setTanggalJatuhTempo(JATUH_TEMPO_KEMARIN);
         pinjamKosong.setTanggalKembali(HARI_INI);
-        assertEquals(HARI_INI, pinjamKosong.getTanggalKembali());
+        pinjamKosong.setSudahDikembalikan(true);
+
+        assertTrue(pinjamKosong.isSudahDikembalikan());
     }
 
     @Test
@@ -51,7 +64,7 @@ class PeminjamanTest {
         // Kasus 3: Sudah dikembalikan & Terlambat (isAfter = true)
         Peminjaman sudahKembaliTerlambat = new Peminjaman("P3", "A3", "3", TANGGAL_PINJAM, HARI_INI.minusDays(3));
         sudahKembaliTerlambat.setSudahDikembalikan(true);
-        sudahKembaliTerlambat.setTanggalKembali(HARI_INI); // Kembali hari ini (terlambat 3 hari)
+        sudahKembaliTerlambat.setTanggalKembali(HARI_INI); // Kembali hari ini
         assertTrue(sudahKembaliTerlambat.isTerlambat(), "Sudah kembali & Tgl. Kembali > J.Tempo harus terlambat.");
 
         // Kasus 4: Sudah dikembalikan & Tepat Waktu (isAfter = false)
@@ -88,14 +101,14 @@ class PeminjamanTest {
     @Test
     @DisplayName("Test getDurasiPeminjaman()")
     void testGetDurasiPeminjaman() {
-        // Kasus 1: Belum dikembalikan (TanggalAkhir = LocalDate.now())
+        // Kasus 1: Belum dikembalikan (Durasi = TanggalPinjam hingga Hari Ini)
         Peminjaman p1 = new Peminjaman("P1", "A1", "1", HARI_INI.minusDays(7), JATUH_TEMPO_KEMARIN);
         assertEquals(7, p1.getDurasiPeminjaman(), "Durasi pinjam (belum kembali) harus 7 hari");
 
-        // Kasus 2: Sudah dikembalikan (TanggalAkhir = tanggalKembali)
+        // Kasus 2: Sudah dikembalikan (Durasi = TanggalPinjam hingga Tanggal Kembali)
         Peminjaman p2 = new Peminjaman("P2", "A2", "2", HARI_INI.minusDays(10), JATUH_TEMPO_KEMARIN);
         p2.setSudahDikembalikan(true);
-        p2.setTanggalKembali(HARI_INI.minusDays(2)); // Dipinjam 10 hari, kembali 8 hari setelah pinjam
+        p2.setTanggalKembali(HARI_INI.minusDays(2)); // Kembali 8 hari setelah pinjam
         assertEquals(8, p2.getDurasiPeminjaman(), "Durasi pinjam (sudah kembali) harus 8 hari");
     }
 }
