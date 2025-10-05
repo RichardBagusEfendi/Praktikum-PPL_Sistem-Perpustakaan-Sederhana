@@ -32,13 +32,13 @@ public class ServicePerpustakaanTest {
     private KalkulatorDenda mockKalkulatorDenda;
 
     private ServicePerpustakaan servicePerpustakaan;
-    private Buku bukuTest;
     private Anggota anggotaTest;
 
     @BeforeEach
     void setUp() {
         servicePerpustakaan = new ServicePerpustakaan(mockRepositoriBuku, mockKalkulatorDenda);
-        bukuTest = new Buku("1234567890", "Pemrograman Java", "John Doe", 5, 150000.0);
+
+        // Buat Anggota baru di setiap test
         anggotaTest = new Anggota("A001", "John Student", "john@student.ac.id",
                 "081234567890", Anggota.TipeAnggota.MAHASISWA);
     }
@@ -50,63 +50,7 @@ public class ServicePerpustakaanTest {
         return buku;
     }
 
-    // --- Method Perbaikan/Penambahan ---
-
-    @Test
-    @DisplayName("Cari buku by ISBN gagal jika ISBN tidak valid")
-    void testCariBukuByIsbnGagalInvalid() {
-        // Test ISBN null (cabang validationUtils.isValidISBN false)
-        Optional<Buku> hasil = servicePerpustakaan.cariBukuByIsbn("123");
-        assertFalse(hasil.isPresent());
-        verifyNoInteractions(mockRepositoriBuku);
-    }
-
-    @Test
-    @DisplayName("Cari buku by judul dengan query kosong/null harus mengembalikan empty list")
-    void testCariBukuByJudulInvalid() {
-        // Menutupi cabang query tidak valid di ValidationUtils (Line Coverage hilang)
-        when(mockRepositoriBuku.cariByJudul("")).thenReturn(Collections.emptyList());
-
-        List<Buku> hasilKosong = servicePerpustakaan.cariBukuByJudul("");
-        List<Buku> hasilNull = servicePerpustakaan.cariBukuByJudul(null); // Validasi seharusnya dilakukan di repo/util
-
-        assertTrue(hasilKosong.isEmpty());
-        // Jika implementasi service/repo Anda tidak melakukan validasi null,
-        // kita hanya perlu memastikan pemanggilan terjadi, meskipun hasilnya kosong.
-        assertTrue(hasilNull.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Cari buku by pengarang dengan query kosong/null harus mengembalikan empty list")
-    void testCariBukuByPengarangInvalid() {
-        // Menutupi cabang query tidak valid (Method Coverage hilang)
-        when(mockRepositoriBuku.cariByPengarang("")).thenReturn(Collections.emptyList());
-
-        List<Buku> hasilKosong = servicePerpustakaan.cariBukuByPengarang("");
-        List<Buku> hasilNull = servicePerpustakaan.cariBukuByPengarang(null);
-
-        assertTrue(hasilKosong.isEmpty());
-        assertTrue(hasilNull.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Hapus buku gagal jika ISBN tidak valid")
-    void testHapusBukuGagalInvalidISBN() {
-        boolean hasil = servicePerpustakaan.hapusBuku("123");
-        assertFalse(hasil);
-        verifyNoInteractions(mockRepositoriBuku);
-    }
-
-    // --- Method yang tersisa (disalin untuk kelengkapan) ---
-    // (Tambahkan kembali semua test case pinjam/kembalikan/hapus yang sudah ada di ServicePerpustakaanTest.java)
-
-    @Test
-    @DisplayName("Tambah buku berhasil ketika data valid dan buku belum ada")
-    void testTambahBukuBerhasil() {
-        // ... (Test yang sudah ada) ...
-    }
-    // ... (dan seterusnya untuk semua test case yang lain) ...
-
+    // --- Test Method Perbaikan/Penambahan ---
 
     @Test
     @DisplayName("Tambah buku berhasil ketika data valid dan buku belum ada")
@@ -161,6 +105,14 @@ public class ServicePerpustakaanTest {
     }
 
     @Test
+    @DisplayName("Hapus buku gagal jika ISBN tidak valid")
+    void testHapusBukuGagalInvalidISBN() {
+        boolean hasil = servicePerpustakaan.hapusBuku("123");
+        assertFalse(hasil);
+        verifyNoInteractions(mockRepositoriBuku);
+    }
+
+    @Test
     @DisplayName("Hapus buku gagal ketika ada yang dipinjam")
     void testHapusBukuGagalAdaYangDipinjam() {
         Buku bukuTest = buatBukuTesting("1234567890", 5, 2); // Ada yang dipinjam (5 total - 2 tersedia = 3 dipinjam)
@@ -187,6 +139,15 @@ public class ServicePerpustakaanTest {
     }
 
     @Test
+    @DisplayName("Cari buku by ISBN gagal jika ISBN tidak valid")
+    void testCariBukuByIsbnGagalInvalid() {
+        // Test ISBN yang tidak valid (kurang dari 10 digit)
+        Optional<Buku> hasil = servicePerpustakaan.cariBukuByIsbn("123");
+        assertFalse(hasil.isPresent());
+        verifyNoInteractions(mockRepositoriBuku);
+    }
+
+    @Test
     @DisplayName("Cari buku by judul berhasil")
     void testCariBukuByJudul() {
         Buku bukuTest = buatBukuTesting("1234567890", 5, 5);
@@ -198,6 +159,34 @@ public class ServicePerpustakaanTest {
         assertEquals(1, hasil.size());
         assertEquals("Pemrograman Java", hasil.get(0).getJudul());
         verify(mockRepositoriBuku).cariByJudul("Java");
+    }
+
+    @Test
+    @DisplayName("Cari buku by judul dengan query kosong/null harus mengembalikan empty list")
+    void testCariBukuByJudulInvalid() {
+        // Menutupi cabang query tidak valid di ValidationUtils (Line Coverage hilang)
+        when(mockRepositoriBuku.cariByJudul("")).thenReturn(Collections.emptyList());
+
+        List<Buku> hasilKosong = servicePerpustakaan.cariBukuByJudul("");
+        List<Buku> hasilNull = servicePerpustakaan.cariBukuByJudul(null); // Validasi seharusnya dilakukan di repo/util
+
+        assertTrue(hasilKosong.isEmpty());
+        assertTrue(hasilNull.isEmpty());
+        verify(mockRepositoriBuku).cariByJudul(null); // Memverifikasi panggilan untuk argumen null (jika repo Anda menanganinya)
+    }
+
+    @Test
+    @DisplayName("Cari buku by pengarang dengan query kosong/null harus mengembalikan empty list")
+    void testCariBukuByPengarangInvalid() {
+        // Menutupi cabang query tidak valid (Method Coverage hilang)
+        when(mockRepositoriBuku.cariByPengarang("")).thenReturn(Collections.emptyList());
+
+        List<Buku> hasilKosong = servicePerpustakaan.cariBukuByPengarang("");
+        List<Buku> hasilNull = servicePerpustakaan.cariBukuByPengarang(null);
+
+        assertTrue(hasilKosong.isEmpty());
+        assertTrue(hasilNull.isEmpty());
+        verify(mockRepositoriBuku).cariByPengarang(null);
     }
 
     @Test
@@ -258,7 +247,6 @@ public class ServicePerpustakaanTest {
         boolean hasil = servicePerpustakaan.pinjamBuku("1234567890", anggota);
 
         assertFalse(hasil, "Tidak boleh meminjam ketika batas pinjam tercapai");
-        // Karena anggota validasi gagal, tidak ada interaksi lebih lanjut ke repo
         verifyNoInteractions(mockRepositoriBuku);
     }
 
